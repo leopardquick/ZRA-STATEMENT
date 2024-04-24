@@ -1,0 +1,16 @@
+version: '3.4'
+
+services:
+  trastatement:
+    container_name: trastatement
+    image: trastatement
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    deploy:
+      restart_policy:
+        condition: on-failure
+      replicas: 1
+      
+    ports:
+      - 8989:8989
