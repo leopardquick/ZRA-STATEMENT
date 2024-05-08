@@ -13,4 +13,4 @@ services:
       replicas: 1
       
     ports:
-      - 8989:8989
+      - 9089:9089

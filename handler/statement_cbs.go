@@ -230,7 +230,7 @@ func (h *Handler) GetStatementFromCbs(accountNumber string, fromDate string, ref
 
 	// Perform the HTTP request
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 30 * time.Second,
 	}
 	resp, err := client.Do(req)
 	if err != nil {

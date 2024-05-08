@@ -35,7 +35,7 @@ func NewHandler(l *slog.Logger) *Handler {
 
 func (h *Handler) GetStatement(day string, accountNumber string) ([]byte, error) {
 
-	ref := "PBZSTM" + time.Now().Format("20060102150405")
+	ref := "PBZRA" + time.Now().Format("20060102150405")
 
 	month := day[0:2]
 	days := day[2:4]
@@ -93,7 +93,7 @@ func (h *Handler) GetStatement(day string, accountNumber string) ([]byte, error)
 	}
 
 	var trxRecord []model.TrxRecord
-	pattern := `9\d{10,}`
+	pattern := `([mtzMTZ]\d{6,7})|(2\d{8,})`
 	re := regexp.MustCompile(pattern)
 	re2 := regexp.MustCompile(`[a-zA-Z]{1,}`)
 
@@ -123,8 +123,8 @@ func (h *Handler) GetStatement(day string, accountNumber string) ([]byte, error)
 				if len(match) > 0 {
 					rec.ControlNo = match[0]
 				}
-			}else{
-				fmt.Println("no control number" , transaction.Remarks)
+			} else {
+				fmt.Println("no control number", transaction.Remarks)
 			}
 
 			if match2 != nil {
@@ -151,7 +151,7 @@ func (h *Handler) GetStatement(day string, accountNumber string) ([]byte, error)
 		return nil, err
 	}
 
-	absolutePath := "pbz-cer/private-key.pem"
+	absolutePath := "pbz-cer/pri.pem"
 
 	privateKey, err := loadPrivateKeyFromFile(absolutePath)
 
@@ -178,7 +178,8 @@ func (h *Handler) GetStatement(day string, accountNumber string) ([]byte, error)
 		return nil, err
 	}
 
-	//	h.L.Info("Statement retrieved request", "Statement", string(Data))
+	// h.L.Info("Statement retrieved request", "Statement", string(Data))
+	// return nil, nil
 
 	req, err := http.NewRequest("POST", constant.URL, bytes.NewBuffer(Data))
 
@@ -299,7 +300,7 @@ func (h *Handler) GetStatementOnDemand(day string, accountNumber string, Origina
 	}
 
 	var trxRecord []model.TrxRecord
-	pattern := `9\d{10,}`
+	pattern := `([mtzMTZ]\d{6,7})|(2\d{8,})`
 	re := regexp.MustCompile(pattern)
 	re2 := regexp.MustCompile(`[a-zA-Z]{1,}`)
 
@@ -311,7 +312,7 @@ func (h *Handler) GetStatementOnDemand(day string, accountNumber string, Origina
 				TrxDtTm:     transaction.TraDate + "T00:00:00",
 				TranType:    transaction.DrCrDesc,
 				TrxAmount:   transaction.TraAmt,
-				ControlNo:   "            ",
+				ControlNo:   "           ",
 				BankRef:     transaction.TraRefNum}
 
 			if rec.TranType == "C" {
@@ -329,8 +330,8 @@ func (h *Handler) GetStatementOnDemand(day string, accountNumber string, Origina
 				if len(match) > 0 {
 					rec.ControlNo = match[0]
 				}
-			}else{
-				fmt.Println("no control number" , transaction.Remarks)
+			} else {
+				fmt.Println("no control number", transaction.Remarks)
 			}
 
 			if match2 != nil {
@@ -357,7 +358,7 @@ func (h *Handler) GetStatementOnDemand(day string, accountNumber string, Origina
 		return nil, err
 	}
 
-	absolutePath := "pbz-cer/private-key.pem"
+	absolutePath := "pbz-cer/pri.pem"
 
 	privateKey, err := loadPrivateKeyFromFile(absolutePath)
 
@@ -397,7 +398,7 @@ func (h *Handler) GetStatementOnDemand(day string, accountNumber string, Origina
 	req.Header.Set("Content-type", "application/xml")
 
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 30 * time.Second,
 	}
 
 	resp, err := client.Do(req)

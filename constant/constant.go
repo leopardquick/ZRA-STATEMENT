@@ -1,8 +1,9 @@
 package constant
 
 const (
-	URL                   = "http://196.43.230.39:8090/RgsWebApi/api/RgsBanksResp"
+	URL                   = "http://192.168.93.13:8080/api/v1/pbz/statement"
 	ACCOUNT_STATEMENT_URL = "http://172.20.1.113:7001/BanksESB_PE07EDC00/BanksMiddleware_PE07EDC00Port"
+	//ACCOUNT_STATEMENT_URL = "http://192.168.101.113:7001/BanksESB_PE07EDC00/BanksMiddleware_PE07EDC00Port"
 
 	// maps of list of banks
 
@@ -10,11 +11,7 @@ const (
 
 var (
 	BANKS_ACCOUNT = map[string]string{
-		"0754716001": "0754716001",
-		"0754715001": "0754715001",
-		"0754724001": "0754724001",
-		"0754723001": "0754723001",
-		"0403875000": "0403875000",
-		"0404204000": "0404204000",
+		"0404003001": "0404003001",
+		//"0400714000": "0400714000",
 	}
 )
