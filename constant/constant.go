@@ -1,8 +1,9 @@
 package constant
 
 const (
-	URL                   = "http://192.168.93.13:8080/api/v1/pbz/statement"
+	URL                   = "http://10.0.200.203:8863/api/v1/pbz/statement"
 	ACCOUNT_STATEMENT_URL = "http://172.20.1.113:7001/BanksESB_PE07EDC00/BanksMiddleware_PE07EDC00Port"
+	ACCOUNT_PAYMENT_URL   = "http://10.0.200.203:8863/api/v1/pbz/payment"
 	//ACCOUNT_STATEMENT_URL = "http://192.168.101.113:7001/BanksESB_PE07EDC00/BanksMiddleware_PE07EDC00Port"
 
 	// maps of list of banks
