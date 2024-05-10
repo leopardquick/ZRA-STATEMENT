@@ -243,7 +243,7 @@ func (h *Handler) GetStatement(day string, accountNumber string) ([]byte, error)
 
 func (h *Handler) GetStatementOnDemand(day string, accountNumber string, OriginalId string) ([]byte, error) {
 
-	ref := "PBZSTM" + time.Now().Format("20060102150405")
+	ref := "PZRA" + time.Now().Format("20060102150405")
 
 	month := day[0:2]
 	days := day[2:4]
@@ -739,7 +739,7 @@ func (h *Handler) GetStatementFromCbsCore(accountNumber string, fromDate string,
 	accountStatementRequest.AccountNumber = accountNumber
 	accountStatementRequest.FromDate = fromDate
 	accountStatementRequest.ToDate = todate
-	accountStatementRequest.ReferenceNumber = "PBZSTM" + time.Now().Format("20060102150405")
+	accountStatementRequest.ReferenceNumber = "PZRTM" + time.Now().Format("20060102150405")
 
 	// check if account number is empty
 

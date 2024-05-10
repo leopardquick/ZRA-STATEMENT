@@ -51,12 +51,9 @@ func main() {
 
 	c := cron.New()
 
-	c.AddFunc("26 12 * * *", func() {
-
+	c.AddFunc("*/90 * * * *", func() {
 		h.CoreFunc(ll)
-
 		// Try the job up to 3 times on failure
-
 	})
 
 	c.AddFunc("10 0 * * *", func() {
