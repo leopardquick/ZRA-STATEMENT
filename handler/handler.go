@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/leopardquict/tra-statement/constant"
@@ -723,4 +724,142 @@ func (h *Handler) ErrorResponse(w http.ResponseWriter, code string, message stri
 	w.Header().Set("Content-Type", "application/xml")
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write(xmlData)
+}
+
+func (h *Handler) GetStatementFromCbsCore(accountNumber string, fromDate string, todate string, referenceNumber string) (StatementResponse, error) {
+
+	// get the channel id from the context
+
+	channelID := "34"
+
+	var accountStatementRequest AccountStatementRequest
+
+	// Decode the incoming AccountStatementRequest json
+
+	accountStatementRequest.AccountNumber = accountNumber
+	accountStatementRequest.FromDate = fromDate
+	accountStatementRequest.ToDate = todate
+	accountStatementRequest.ReferenceNumber = "PBZSTM" + time.Now().Format("20060102150405")
+
+	// check if account number is empty
+
+	r := NewAccountStatement()
+
+	r.Body.E07Edca5.InpAcctKey = accountStatementRequest.AccountNumber
+	r.Body.E07Edca5.InpChannelRefNumInout = accountStatementRequest.ReferenceNumber
+	r.Body.E07Edca5.InpFromDate = accountStatementRequest.FromDate
+	r.Body.E07Edca5.InpToDate = accountStatementRequest.ToDate
+
+	// check if reference number is empty
+
+	r.Body.E07Edca5.InpAcctType = 2
+	r.Body.E07Edca5.ReqLanIndInout = 1
+
+	channelIDInt, err := strconv.Atoi(channelID)
+
+	if err != nil {
+		h.L.Error("fail to mashal: %v", err.Error(), nil)
+		return StatementResponse{}, err
+	}
+
+	r.Body.E07Edca5.InpChannelIdInout = channelIDInt
+
+	xmlData, err := xml.Marshal(r)
+
+	if err != nil {
+		h.L.Error("fail to mashal", err.Error(), nil)
+		return StatementResponse{}, err
+	}
+
+	req, err := http.NewRequest("POST", constant.ACCOUNT_STATEMENT_URL, bytes.NewBuffer(xmlData))
+
+	if err != nil {
+		h.L.Error("error %v", err.Error(), nil)
+		return StatementResponse{}, err
+	}
+
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	req.Header.Set("SOAPAction", "http://com/icsfs/banks/ws/BanksMiddleware_PE07EDC00.wsdl ")
+
+	// Perform the HTTP request
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		h.L.Error("error %v", err.Error(), nil)
+		return StatementResponse{}, err
+	}
+
+	defer resp.Body.Close()
+
+	// write the response to the response writer
+
+	responseBody := new(bytes.Buffer)
+	responseBody.ReadFrom(resp.Body)
+
+	var responseEnvelope AccountStatementResponse
+
+	err = xml.Unmarshal(responseBody.Bytes(), &responseEnvelope)
+
+	if err != nil {
+		h.L.Error("error %v", err.Error(), nil)
+		return StatementResponse{}, err
+	}
+
+	if responseEnvelope.Body.Response.OutStatusOut != "0" {
+		h.L.Error("error %v", responseEnvelope.Body.Response.OutMsgTxtOut, nil)
+		return StatementResponse{}, errors.New(responseEnvelope.Body.Response.OutMsgTxtOut)
+	}
+
+	if responseEnvelope.Body.Response.OutAccStaOut == "1" {
+		responseEnvelope.Body.Response.OutAccStaOut = "open"
+	} else if responseEnvelope.Body.Response.OutAccStaOut == "2" {
+		responseEnvelope.Body.Response.OutAccStaOut = "closed"
+	} else if responseEnvelope.Body.Response.OutAccStaOut == "3" {
+		responseEnvelope.Body.Response.OutAccStaOut = "dormant"
+	}
+
+	if responseEnvelope.Body.Response.OutStatusOut == "0" {
+		responseEnvelope.Body.Response.OutStatusOut = "success"
+	} else if responseEnvelope.Body.Response.OutStatusOut == "-13" {
+		responseEnvelope.Body.Response.OutStatusOut = "duplicated reference number"
+
+		h.L.Error("error %v", responseEnvelope.Body.Response.OutStatusOut, nil)
+
+		// new error
+
+		return StatementResponse{}, errors.New(responseEnvelope.Body.Response.OutStatusOut)
+	}
+
+	var allTransactions []Transaction
+
+	for _, transaction := range responseEnvelope.Body.Response.OutPayloadOut.PayloadClobObjUser {
+		transaction, err := r.ParseXMLToTransaction(transaction.PayloadClob)
+
+		if err != nil {
+			h.L.Error("error %v", responseEnvelope.Body.Response.OutMsgTxtOut, nil)
+			return StatementResponse{}, errors.New(responseEnvelope.Body.Response.OutMsgTxtOut)
+		}
+
+		allTransactions = append(allTransactions, *transaction)
+	}
+
+	statementResponse := StatementResponse{
+		ReferenceNumber:   responseEnvelope.Body.Response.InpChannelRefNumInout,
+		AccountNumber:     responseEnvelope.Body.Response.OutBbanOut,
+		CustomerName:      responseEnvelope.Body.Response.OutCusShoNameOut,
+		AccountStatus:     responseEnvelope.Body.Response.OutAccStaOut,
+		Currency:          responseEnvelope.Body.Response.OutAltCurOut,
+		OpeningBalance:    responseEnvelope.Body.Response.OutOpenBalOut,
+		ClosingBalance:    responseEnvelope.Body.Response.OutCloseBalOut,
+		TotalTransactions: responseEnvelope.Body.Response.OutTotTraOut,
+		Transactions:      allTransactions,
+		Message:           responseEnvelope.Body.Response.OutMsgTxtOut,
+	}
+
+	// write the response to the response writer
+
+	return statementResponse, nil
+
 }

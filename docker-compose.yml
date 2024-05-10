@@ -1,9 +1,9 @@
 version: '3.4'
 
 services:
-  trastatement:
-    container_name: trastatement
-    image: trastatement
+  ZRA:
+    container_name: ZRA
+    image: ZRA
     build:
       context: .
       dockerfile: ./Dockerfile

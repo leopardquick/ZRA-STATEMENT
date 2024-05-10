@@ -22,7 +22,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/leopardquict/tra-statement/constant"
-	"github.com/leopardquict/tra-statement/handler"
+	h "github.com/leopardquict/tra-statement/handler"
 	"github.com/robfig/cron/v3"
 )
 
@@ -45,14 +45,19 @@ func main() {
 
 	ll := slog.New(slog.NewJSONHandler(file, &slog.HandlerOptions{}))
 
-	handler := handler.NewHandler(ll)
+	handler := h.NewHandler(ll)
 
 	r := chi.NewRouter()
 
 	c := cron.New()
 
+	c.AddFunc("26 12 * * *", func() {
 
+		h.CoreFunc(ll)
 
+		// Try the job up to 3 times on failure
+
+	})
 
 	c.AddFunc("10 0 * * *", func() {
 
