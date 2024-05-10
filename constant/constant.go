@@ -12,7 +12,7 @@ const (
 var (
 	BANKS_ACCOUNT = map[string]string{
 		"0404003001": "0404003001",
-		//"0400714000": "0400714000",
+		"0400714000": "0400714000",
 	}
 
 	DATASENT = make(map[string]string)
